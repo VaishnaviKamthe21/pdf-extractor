@@ -1,0 +1,32 @@
+app:
+  name: "textbook-extraction-pipeline"
+  environment: "production"
+
+defaults:
+  board: "State Board Maharashtra"
+  subject: "Science"
+  grade: 4
+  book: "Play, Do, Learn"
+  language: "en"
+
+ocr:
+  enable_fallback: true
+  dpi: 300
+  tesseract_lang: "mar+hin+eng"
+  min_confidence: 0.85
+
+pinecone:
+  index_name: "textbooks-prod"
+  namespace_pattern: "{board}_{grade}_{subject}"
+  embedding_model: "intfloat/multilingual-e5-large"
+  chunk_size: 512
+  chunk_overlap: 50
+
+logging:
+  level: "INFO"
+  log_dir: "logs"
+
+validation:
+  enable_llm_validation: false
+  backend: "huggingface_api"
+  hf_llm_model: "meta-llama/Meta-Llama-3-8B-Instruct"
