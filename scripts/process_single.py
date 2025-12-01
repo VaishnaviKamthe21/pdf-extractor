@@ -2,6 +2,7 @@ import argparse
 import os
 
 from dotenv import load_dotenv
+from pathlib import Path
 
 from src.models.schemas import ProcessingConfig
 from src.utils.pipeline_single import process_single_pdf
