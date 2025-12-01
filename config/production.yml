@@ -9,12 +9,6 @@ defaults:
   book: "Play, Do, Learn"
   language: "en"
 
-ocr:
-  enable_fallback: true
-  dpi: 300
-  tesseract_lang: "mar+hin+eng"
-  min_confidence: 0.85
-
 pinecone:
   index_name: "textbooks-prod"
   namespace_pattern: "{board}_{grade}_{subject}"

@@ -79,9 +79,10 @@ class PyMuPDFExtractor:
         )
 
         logger.info(
-            f"Extracted {len(pages)} pages from {pdf_path}. "
-            f"Low-confidence pages: {sum(p.needs_ocr for p in pages)}"
+            f"Extracted {len(pages)} pages from {pdf_path} "
+            f"(min_confidence={self.min_confidence})."
         )
+
 
         return extraction
 

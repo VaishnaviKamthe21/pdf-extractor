@@ -4,10 +4,8 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from src.extractor.pymupdf_extractor import PyMuPDFExtractor
-from src.extractor.ocr_tesseract import TesseractOCR
 from src.models.schemas import ProcessingConfig, ExtractionResult, ValidatedResult
 
 logger = logging.getLogger(__name__)
@@ -19,14 +17,17 @@ def process_single_pdf(
     output_dir: str = "output",
 ) -> ValidatedResult:
     """
-    End-to-end processing of a single PDF:
-      1) Extract with PyMuPDF
-      2) Optional OCR fallback on low-confidence pages
-      3) Merge content into a ValidatedResult
+    End-to-end processing of a single chapter PDF (text-only):
+      1) Derive chapter_no and title from filename
+      2) Extract with PyMuPDF
+      3) Merge pages into content
       4) Save JSON to output/
     """
     pdf_path = str(pdf_path)
-    logger.info(f"Processing PDF: {pdf_path}")
+    pdf_stem = Path(pdf_path).stem  # e.g. "Chapter_01_Where_the_mind_is_without_fear"
+    logger.info(f"Processing chapter PDF: {pdf_path}")
+
+    chapter_no, title = _parse_chapter_metadata_from_filename(pdf_stem)
 
     extractor = PyMuPDFExtractor(min_confidence=config.min_page_confidence)
     extraction: ExtractionResult = extractor.extract(
@@ -38,19 +39,8 @@ def process_single_pdf(
         language=config.language,
     )
 
-    # # Optional OCR fallback
-    # if config.enable_ocr_fallback:
-    #     ocr = TesseractOCR(dpi=config.ocr_dpi, lang=config.ocr_lang)
-    #     extraction = ocr.apply_ocr_to_results(pdf_path, extraction)
-
-    # Merge all page texts into one content string
     merged_text = _merge_pages_to_content(extraction)
 
-    # For now, simple placeholders for chapter_no and title
-    chapter_no = "1.0"
-    title = "Auto Extracted Lesson"
-
-    # Compute overall confidence and counts
     overall_conf = min(p.confidence for p in extraction.pages) if extraction.pages else 0.0
     image_count = sum(p.image_count for p in extraction.pages)
     table_count = sum(p.table_count for p in extraction.pages)
@@ -76,10 +66,32 @@ def process_single_pdf(
 
     logger.info(
         f"Finished processing {pdf_path} -> lesson_id={validated.lesson_id}, "
-        f"len(content)={len(validated.content)}"
+        f"chapter={chapter_no}, title={title}, len(content)={len(validated.content)}"
     )
 
     return validated
+
+
+def _parse_chapter_metadata_from_filename(stem: str) -> tuple[str, str]:
+    """
+    Parse chapter number and title from a filename like:
+      'Chapter_01_Where_the_mind_is_without_fear'
+
+    Returns (chapter_no, title):
+      ('01', 'Where the mind is without fear')
+    """
+    parts = stem.split("_", 2)
+    # Expected pattern: ["Chapter", "01", "Where_the_mind_is_without_fear"]
+    if len(parts) >= 3 and parts[0].lower() == "chapter":
+        chapter_no = parts[1]
+        raw_title = parts[2]
+    else:
+        # Fallback: chapter_no = "1.0", title = stem with underscores replaced
+        chapter_no = "1.0"
+        raw_title = stem
+
+    title = raw_title.replace("_", " ").strip()
+    return chapter_no, title
 
 
 def _merge_pages_to_content(extraction: ExtractionResult) -> str:
@@ -98,7 +110,6 @@ def _save_validated_json(validated: ValidatedResult, output_dir: str) -> None:
     filename = f"{validated.lesson_id}_validated_{ts}.json"
     out_path = Path(output_dir) / filename
 
-    # Use model_dump + convert datetimes to ISO strings
     data = validated.model_dump()
     if isinstance(data.get("created_at"), datetime):
         data["created_at"] = data["created_at"].isoformat()
