@@ -20,7 +20,7 @@ def load_validated_results(output_dir: str) -> list[ValidatedResult]:
 
 
 def main():
-    load_dotenv()  # .env must be in project root
+    load_dotenv()
 
     parser = argparse.ArgumentParser(description="Index chapter JSONs into Pinecone")
     parser.add_argument("--output-dir", default="output", help="Folder with *_validated_*.json")
