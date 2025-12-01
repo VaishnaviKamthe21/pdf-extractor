@@ -62,7 +62,7 @@ class PyMuPDFExtractor:
                 raw_text=raw_text,
                 blocks=blocks,
                 image_count=image_count,
-                table_count=0,  # can be improved later
+                table_count=0,  
                 confidence=confidence,
                 needs_ocr=confidence < self.min_confidence,
             )

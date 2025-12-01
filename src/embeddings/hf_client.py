@@ -27,7 +27,6 @@ class HuggingFaceEmbeddingClient:
 
         if api_url is None:
             # Standard HF Inference endpoint for embeddings
-            # You can customize if you use a specific space or endpoint.
             api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model_name}"
         self.api_url = api_url
 
